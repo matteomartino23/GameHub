@@ -1,33 +1,32 @@
 local UI = {}
 
-local TweenService = game:GetService("TweenService")
 local Players = game:GetService("Players")
+local TweenService = game:GetService("TweenService")
 local TeleportService = game:GetService("TeleportService")
+local UserInputService = game:GetService("UserInputService")
 
 local lp = Players.LocalPlayer
 local pg = lp:WaitForChild("PlayerGui")
 
--- CONFIG
-local THEME = {
-    BG = Color3.fromRGB(20,20,20),
-    TOP = Color3.fromRGB(30,30,30),
-    ACCENT = Color3.fromRGB(255,255,255),
-}
-
 local sahurImage = "rbxassetid://139818999438291"
 
--- WINDOW OBJECT
+-- WINDOW
 local Window = {}
 Window.__index = Window
 
--- TAB OBJECT
 local Tab = {}
 Tab.__index = Tab
 
--- CREATE WINDOW
-function UI:CreateWindow(config)
-    config = config or {}
+local DEFAULT_TABS = {
+    "🏠Home",
+    "🎮Game",
+    "🎮🎮Games",
+    "⚙️Settings",
+    "👾Universal Cheats",
+    "🏆Credits"
+}
 
+function UI:CreateWindow()
     local screen = Instance.new("ScreenGui")
     screen.Name = "TungUI"
     screen.ResetOnSpawn = false
@@ -36,12 +35,12 @@ function UI:CreateWindow(config)
     local main = Instance.new("Frame")
     main.Size = UDim2.new(0, 520, 0, 350)
     main.Position = UDim2.new(0.5, -260, 0.5, -175)
-    main.BackgroundColor3 = THEME.BG
+    main.BackgroundColor3 = Color3.fromRGB(20,20,20)
     main.Parent = screen
 
     local top = Instance.new("Frame")
     top.Size = UDim2.new(1,0,0,40)
-    top.BackgroundColor3 = THEME.TOP
+    top.BackgroundColor3 = Color3.fromRGB(30,30,30)
     top.Parent = main
 
     local img = Instance.new("ImageLabel")
@@ -74,6 +73,7 @@ function UI:CreateWindow(config)
     openBtn.Parent = screen
 
     local self = setmetatable({}, Window)
+
     self.Gui = screen
     self.Main = main
     self.Content = content
@@ -81,7 +81,7 @@ function UI:CreateWindow(config)
     self.OpenBtn = openBtn
     self.Tabs = {}
 
-    -- drag
+    -- DRAG
     local dragging = false
     local dragStart, startPos
 
@@ -93,7 +93,7 @@ function UI:CreateWindow(config)
         end
     end)
 
-    game:GetService("UserInputService").InputChanged:Connect(function(i)
+    UserInputService.InputChanged:Connect(function(i)
         if dragging and i.UserInputType == Enum.UserInputType.MouseMovement then
             local delta = i.Position - dragStart
             main.Position = UDim2.new(
@@ -105,7 +105,7 @@ function UI:CreateWindow(config)
         end
     end)
 
-    game:GetService("UserInputService").InputEnded:Connect(function(i)
+    UserInputService.InputEnded:Connect(function(i)
         if i.UserInputType == Enum.UserInputType.MouseButton1 then
             dragging = false
         end
@@ -121,18 +121,25 @@ function UI:CreateWindow(config)
         openBtn.Visible = false
     end)
 
+    -- CREATE DEFAULT TABS
+    for _, name in ipairs(DEFAULT_TABS) do
+        self:CreateTab(name)
+    end
+
     return self
 end
 
--- CREATE TAB
+-- TAB CREATION
 function Window:CreateTab(name)
-    local tabBtn = Instance.new("TextButton")
-    tabBtn.Size = UDim2.new(1,0,0,35)
-    tabBtn.Text = name
-    tabBtn.Parent = self.TabList
+
+    local tabButton = Instance.new("TextButton")
+    tabButton.Size = UDim2.new(1,0,0,35)
+    tabButton.Text = name
+    tabButton.Parent = self.TabList
 
     local page = Instance.new("ScrollingFrame")
     page.Size = UDim2.new(1,0,1,0)
+    page.BackgroundTransparency = 1
     page.Visible = false
     page.Parent = self.Content
 
@@ -141,24 +148,25 @@ function Window:CreateTab(name)
 
     local selfTab = setmetatable({}, Tab)
     selfTab.Page = page
+    selfTab.Window = self
 
     function selfTab:Show()
-        for _,t in pairs(self.Tabs or {}) do
+        for _,t in pairs(self.Window.Tabs) do
             t.Page.Visible = false
         end
         page.Visible = true
     end
 
-    tabBtn.MouseButton1Click:Connect(function()
+    tabButton.MouseButton1Click:Connect(function()
         selfTab:Show()
     end)
 
-    -- DEFAULT FIRST TAB
-    if #self.Tabs == 0 then
+    table.insert(self.Tabs, selfTab)
+
+    -- auto first tab visible
+    if #self.Tabs == 1 then
         page.Visible = true
     end
-
-    table.insert(self.Tabs, selfTab)
 
     return selfTab
 end
@@ -177,59 +185,59 @@ end
 function Tab:CT(text, default, callback)
     local state = default or false
 
-    local t = Instance.new("TextButton")
-    t.Size = UDim2.new(1,-10,0,35)
-    t.Text = text .. ": " .. tostring(state)
-    t.Parent = self.Page
+    local b = Instance.new("TextButton")
+    b.Size = UDim2.new(1,-10,0,35)
+    b.Text = text .. ": " .. tostring(state)
+    b.Parent = self.Page
 
-    t.MouseButton1Click:Connect(function()
+    b.MouseButton1Click:Connect(function()
         state = not state
-        t.Text = text .. ": " .. tostring(state)
+        b.Text = text .. ": " .. tostring(state)
         callback(state)
     end)
 end
 
--- SLIDER (semplice)
+-- SLIDER (click cycle)
 function Tab:CS(text, min, max, default, callback)
     local value = default or min
 
-    local frame = Instance.new("Frame")
-    frame.Size = UDim2.new(1,-10,0,50)
-    frame.Parent = self.Page
+    local f = Instance.new("Frame")
+    f.Size = UDim2.new(1,-10,0,50)
+    f.Parent = self.Page
 
     local label = Instance.new("TextLabel")
-    label.Size = UDim2.new(1,0,0,20)
-    label.Text = text .. " : " .. value
-    label.Parent = frame
+    label.Size = UDim2.new(1,0,0,25)
+    label.Text = text .. ": " .. value
+    label.Parent = f
 
     local btn = Instance.new("TextButton")
-    btn.Size = UDim2.new(1,0,0,30)
-    btn.Position = UDim2.new(0,0,0,20)
-    btn.Text = "Click to increase"
-    btn.Parent = frame
+    btn.Size = UDim2.new(1,0,0,25)
+    btn.Position = UDim2.new(0,0,0,25)
+    btn.Text = "Increase"
+    btn.Parent = f
 
     btn.MouseButton1Click:Connect(function()
         value += 1
         if value > max then value = min end
-        label.Text = text .. " : " .. value
+        label.Text = text .. ": " .. value
         callback(value)
     end)
 end
 
--- DROPDOWN (semplice cycle)
+-- DROPDOWN
 function Tab:CDD(text, list, callback)
-    local index = 1
+    local i = 1
 
     local b = Instance.new("TextButton")
     b.Size = UDim2.new(1,-10,0,35)
-    b.Text = text .. ": " .. list[index]
+    b.Text = text .. ": " .. list[i]
     b.Parent = self.Page
 
     b.MouseButton1Click:Connect(function()
-        index += 1
-        if index > #list then index = 1 end
-        b.Text = text .. ": " .. list[index]
-        callback(list[index])
+        i += 1
+        if i > #list then i = 1 end
+        b.Text = text .. ": " .. list[i]
+        callback(list[i])
     end)
 end
 
@@ -244,11 +252,5 @@ function Tab:CreateGameTeleport(name, placeId)
         TeleportService:Teleport(placeId, lp)
     end)
 end
-
--- ALIAS API
-Tab.CB = Tab.CB
-Tab.CT = Tab.CT
-Tab.CS = Tab.CS
-Tab.CDD = Tab.CDD
 
 return UI
