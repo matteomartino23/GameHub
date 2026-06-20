@@ -1,6 +1,5 @@
 local UI = {}
 
--- SERVICES
 local Players = game:GetService("Players")
 local TeleportService = game:GetService("TeleportService")
 local UserInputService = game:GetService("UserInputService")
@@ -8,10 +7,27 @@ local UserInputService = game:GetService("UserInputService")
 local lp = Players.LocalPlayer
 local pg = lp:WaitForChild("PlayerGui")
 
-local sahurImage = "rbxassetid://139818999438291"
+local SAHUR = "rbxassetid://139818999438291"
 
 ------------------------------------------------
--- WINDOW + TAB SYSTEM
+-- STYLE HELPERS
+------------------------------------------------
+local function Corner(obj, r)
+	local c = Instance.new("UICorner")
+	c.CornerRadius = UDim.new(0, r or 10)
+	c.Parent = obj
+end
+
+local function Stroke(obj)
+	local s = Instance.new("UIStroke")
+	s.Thickness = 1
+	s.Transparency = 0.6
+	s.Color = Color3.fromRGB(255,255,255)
+	s.Parent = obj
+end
+
+------------------------------------------------
+-- WINDOW / TAB
 ------------------------------------------------
 local Window = {}
 Window.__index = Window
@@ -33,81 +49,102 @@ local DEFAULT_TABS = {
 ------------------------------------------------
 function UI:CreateWindow()
 
-	local screen = Instance.new("ScreenGui")
-	screen.Name = "TungUI"
-	screen.ResetOnSpawn = false
-	screen.Parent = pg
+	local gui = Instance.new("ScreenGui")
+	gui.Name = "TungUI"
+	gui.ResetOnSpawn = false
+	gui.Parent = pg
 
 	local main = Instance.new("Frame")
 	main.AnchorPoint = Vector2.new(0.5, 0.5)
-	main.Size = UDim2.fromScale(0.65, 0.65)
 	main.Position = UDim2.fromScale(0.5, 0.5)
-	main.BackgroundColor3 = Color3.fromRGB(20,20,20)
-	main.Parent = screen
+	main.Size = UDim2.fromScale(0.62, 0.62)
+	main.BackgroundColor3 = Color3.fromRGB(15,15,18)
+	main.Parent = gui
 
-	local aspect = Instance.new("UIAspectRatioConstraint")
-	aspect.AspectRatio = 520/350
-	aspect.Parent = main
+	Corner(main, 12)
+	Stroke(main)
 
-	local uiScale = Instance.new("UIScale")
-	uiScale.Parent = main
+	local scale = Instance.new("UIScale")
+	scale.Parent = main
 
-	local camera = workspace.CurrentCamera
+	local cam = workspace.CurrentCamera
 
-	local function updateScale()
-		local v = camera.ViewportSize
-		local scale = math.clamp(math.min(v.X/1920, v.Y/1080), 0.6, 1.3)
-		uiScale.Scale = scale
+	local function update()
+		local v = cam.ViewportSize
+		scale.Scale = math.clamp(math.min(v.X/1920, v.Y/1080), 0.65, 1.2)
 	end
 
-	updateScale()
-	camera:GetPropertyChangedSignal("ViewportSize"):Connect(updateScale)
+	update()
+	cam:GetPropertyChangedSignal("ViewportSize"):Connect(update)
 
-	-- TOP BAR
+	------------------------------------------------
+	-- TOP
+	------------------------------------------------
 	local top = Instance.new("Frame")
-	top.Size = UDim2.new(1,0,0.1,0)
-	top.BackgroundColor3 = Color3.fromRGB(30,30,30)
+	top.Size = UDim2.new(1,0,0,45)
+	top.BackgroundColor3 = Color3.fromRGB(22,22,28)
 	top.Parent = main
 
-	local img = Instance.new("ImageLabel")
-	img.Size = UDim2.new(0,40,0,40)
-	img.BackgroundTransparency = 1
-	img.Image = sahurImage
-	img.Parent = top
+	Corner(top, 12)
+
+	local icon = Instance.new("ImageLabel")
+	icon.Size = UDim2.new(0,40,0,40)
+	icon.Position = UDim2.new(0,5,0,2)
+	icon.BackgroundTransparency = 1
+	icon.Image = SAHUR
+	icon.Parent = top
 
 	local close = Instance.new("TextButton")
 	close.Size = UDim2.new(0,40,0,40)
-	close.Position = UDim2.new(1,-40,0,0)
+	close.Position = UDim2.new(1,-45,0,2)
 	close.Text = "X"
+	close.TextColor3 = Color3.fromRGB(255,255,255)
+	close.BackgroundColor3 = Color3.fromRGB(40,40,50)
 	close.Parent = top
 
-	-- TAB LIST + CONTENT
+	Corner(close, 8)
+
+	------------------------------------------------
+	-- SIDEBAR
+	------------------------------------------------
 	local tabList = Instance.new("Frame")
-	tabList.Size = UDim2.new(0.25,0,0.9,0)
-	tabList.Position = UDim2.new(0,0,0.1,0)
+	tabList.Size = UDim2.new(0,170,1,-45)
+	tabList.Position = UDim2.new(0,0,0,45)
+	tabList.BackgroundColor3 = Color3.fromRGB(18,18,22)
 	tabList.Parent = main
 
+	Corner(tabList, 12)
+
+	------------------------------------------------
+	-- CONTENT
+	------------------------------------------------
 	local content = Instance.new("Frame")
-	content.Size = UDim2.new(0.75,0,0.9,0)
-	content.Position = UDim2.new(0.25,0,0.1,0)
+	content.Size = UDim2.new(1,-170,1,-45)
+	content.Position = UDim2.new(0,170,0,45)
+	content.BackgroundColor3 = Color3.fromRGB(14,14,18)
 	content.Parent = main
 
+	Corner(content, 12)
+
+	------------------------------------------------
 	-- OPEN BUTTON
-	local openBtn = Instance.new("ImageButton")
-	openBtn.Size = UDim2.fromScale(0.07,0.12)
-	openBtn.Position = UDim2.fromScale(0.02,0.45)
-	openBtn.Image = sahurImage
-	openBtn.Visible = false
-	openBtn.Parent = screen
+	------------------------------------------------
+	local open = Instance.new("ImageButton")
+	open.Size = UDim2.fromScale(0.07,0.12)
+	open.Position = UDim2.fromScale(0.02,0.45)
+	open.Image = SAHUR
+	open.Visible = false
+	open.Parent = gui
 
 	------------------------------------------------
 	local self = setmetatable({}, Window)
 
-	self.Gui = screen
+	self.Gui = gui
 	self.Main = main
 	self.Content = content
 	self.TabList = tabList
-	self.OpenBtn = openBtn
+	self.OpenBtn = open
+
 	self.Tabs = {}
 	self.TabByName = {}
 
@@ -115,12 +152,12 @@ function UI:CreateWindow()
 	-- CLOSE / OPEN
 	close.MouseButton1Click:Connect(function()
 		main.Visible = false
-		openBtn.Visible = true
+		open.Visible = true
 	end)
 
-	openBtn.MouseButton1Click:Connect(function()
+	open.MouseButton1Click:Connect(function()
 		main.Visible = true
-		openBtn.Visible = false
+		open.Visible = false
 	end)
 
 	------------------------------------------------
@@ -139,9 +176,15 @@ end
 function Window:CreateTab(name)
 
 	local btn = Instance.new("TextButton")
-	btn.Size = UDim2.new(1,0,0,35)
+	btn.Size = UDim2.new(1,0,0,38)
 	btn.Text = name
+	btn.BackgroundColor3 = Color3.fromRGB(25,25,32)
+	btn.TextColor3 = Color3.fromRGB(200,200,200)
+	btn.Font = Enum.Font.GothamMedium
+	btn.TextSize = 14
 	btn.Parent = self.TabList
+
+	Corner(btn, 8)
 
 	local page = Instance.new("ScrollingFrame")
 	page.Size = UDim2.new(1,0,1,0)
@@ -161,6 +204,17 @@ function Window:CreateTab(name)
 			t.Page.Visible = false
 		end
 		page.Visible = true
+
+		-- highlight reset
+		for _,b in pairs(self.Window.TabList:GetChildren()) do
+			if b:IsA("TextButton") then
+				b.BackgroundColor3 = Color3.fromRGB(25,25,32)
+				b.TextColor3 = Color3.fromRGB(200,200,200)
+			end
+		end
+
+		btn.BackgroundColor3 = Color3.fromRGB(120,80,255)
+		btn.TextColor3 = Color3.fromRGB(255,255,255)
 	end
 
 	btn.MouseButton1Click:Connect(function()
@@ -170,28 +224,28 @@ function Window:CreateTab(name)
 	table.insert(self.Tabs, selfTab)
 
 	if #self.Tabs == 1 then
-		page.Visible = true
+		selfTab:Show()
 	end
 
 	return selfTab
 end
 
 ------------------------------------------------
--- GAME CHECKER (ONLY GAME TAB USE)
+-- GAME CHECKER
 ------------------------------------------------
 function Tab:CreateGameChecker(placeId, callback)
 
 	local b = Instance.new("TextButton")
-	b.Size = UDim2.new(1,-10,0,35)
+	b.Size = UDim2.new(1,0,0,38)
 	b.Text = "GameChecker: "..placeId
+	b.BackgroundColor3 = Color3.fromRGB(25,25,32)
+	b.TextColor3 = Color3.fromRGB(255,255,255)
 	b.Parent = self.Page
 
+	Corner(b, 8)
+
 	b.MouseButton1Click:Connect(function()
-		if game.PlaceId == placeId then
-			callback(true)
-		else
-			callback(false)
-		end
+		callback(game.PlaceId == placeId)
 	end)
 end
 
@@ -200,9 +254,14 @@ end
 ------------------------------------------------
 function Tab:CB(text, callback)
 	local b = Instance.new("TextButton")
-	b.Size = UDim2.new(1,-10,0,35)
+	b.Size = UDim2.new(1,0,0,38)
 	b.Text = text
+	b.BackgroundColor3 = Color3.fromRGB(25,25,32)
+	b.TextColor3 = Color3.fromRGB(220,220,220)
 	b.Parent = self.Page
+
+	Corner(b, 8)
+
 	b.MouseButton1Click:Connect(callback)
 end
 
@@ -210,12 +269,16 @@ end
 -- TOGGLE
 ------------------------------------------------
 function Tab:CT(text, default, callback)
-	local state = default or false
+	local state = default
 
 	local b = Instance.new("TextButton")
-	b.Size = UDim2.new(1,-10,0,35)
+	b.Size = UDim2.new(1,0,0,38)
 	b.Text = text..": "..tostring(state)
+	b.BackgroundColor3 = Color3.fromRGB(25,25,32)
+	b.TextColor3 = Color3.fromRGB(220,220,220)
 	b.Parent = self.Page
+
+	Corner(b, 8)
 
 	b.MouseButton1Click:Connect(function()
 		state = not state
@@ -225,23 +288,28 @@ function Tab:CT(text, default, callback)
 end
 
 ------------------------------------------------
--- SLIDER (CLICK BASED)
+-- SLIDER (simple)
 ------------------------------------------------
 function Tab:CS(text, min, max, default, callback)
-	local value = default or min
+	local value = default
 
 	local f = Instance.new("Frame")
-	f.Size = UDim2.new(1,-10,0,50)
+	f.Size = UDim2.new(1,0,0,60)
+	f.BackgroundColor3 = Color3.fromRGB(25,25,32)
 	f.Parent = self.Page
 
+	Corner(f, 8)
+
 	local l = Instance.new("TextLabel")
-	l.Size = UDim2.new(1,0,0,25)
+	l.Size = UDim2.new(1,0,0,30)
+	l.BackgroundTransparency = 1
 	l.Text = text..": "..value
+	l.TextColor3 = Color3.fromRGB(255,255,255)
 	l.Parent = f
 
 	local b = Instance.new("TextButton")
-	b.Size = UDim2.new(1,0,0,25)
-	b.Position = UDim2.new(0,0,0,25)
+	b.Size = UDim2.new(1,0,0,30)
+	b.Position = UDim2.new(0,0,0,30)
 	b.Text = "Change"
 	b.Parent = f
 
@@ -260,9 +328,12 @@ function Tab:CDD(text, list, callback)
 	local i = 1
 
 	local b = Instance.new("TextButton")
-	b.Size = UDim2.new(1,-10,0,35)
+	b.Size = UDim2.new(1,0,0,38)
 	b.Text = text..": "..list[i]
+	b.BackgroundColor3 = Color3.fromRGB(25,25,32)
 	b.Parent = self.Page
+
+	Corner(b, 8)
 
 	b.MouseButton1Click:Connect(function()
 		i += 1
@@ -273,14 +344,18 @@ function Tab:CDD(text, list, callback)
 end
 
 ------------------------------------------------
--- GAME TELEPORT
+-- TELEPORT
 ------------------------------------------------
 function Tab:CreateGameTeleport(name, placeId)
 
 	local b = Instance.new("TextButton")
-	b.Size = UDim2.new(1,-10,0,35)
+	b.Size = UDim2.new(1,0,0,38)
 	b.Text = "Teleport: "..name
+	b.BackgroundColor3 = Color3.fromRGB(25,25,32)
+	b.TextColor3 = Color3.fromRGB(255,255,255)
 	b.Parent = self.Page
+
+	Corner(b, 8)
 
 	b.MouseButton1Click:Connect(function()
 		TeleportService:Teleport(placeId, lp)
