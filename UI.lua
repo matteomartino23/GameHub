@@ -1,7 +1,6 @@
 local UI = {}
 
 local Players = game:GetService("Players")
-local TweenService = game:GetService("TweenService")
 local TeleportService = game:GetService("TeleportService")
 local UserInputService = game:GetService("UserInputService")
 
@@ -10,7 +9,6 @@ local pg = lp:WaitForChild("PlayerGui")
 
 local sahurImage = "rbxassetid://139818999438291"
 
--- WINDOW
 local Window = {}
 Window.__index = Window
 
@@ -18,15 +16,17 @@ local Tab = {}
 Tab.__index = Tab
 
 local DEFAULT_TABS = {
-    "🏠Home",
-    "🎮Game",
-    "🎮🎮Games",
-    "⚙️Settings",
-    "👾Universal Cheats",
-    "🏆Credits"
+    "Home",
+    "Game",
+    "Games",
+    "Settings",
+    "UniversalCheats",
+    "Credits"
 }
 
+-- CREATE WINDOW
 function UI:CreateWindow()
+
     local screen = Instance.new("ScreenGui")
     screen.Name = "TungUI"
     screen.ResetOnSpawn = false
@@ -79,7 +79,10 @@ function UI:CreateWindow()
     self.Content = content
     self.TabList = tabList
     self.OpenBtn = openBtn
+
+    -- tab storage
     self.Tabs = {}
+    self.TabByName = {}
 
     -- DRAG
     local dragging = false
@@ -121,15 +124,22 @@ function UI:CreateWindow()
         openBtn.Visible = false
     end)
 
-    -- CREATE DEFAULT TABS
+    -- CREATE DEFAULT TABS + RETURN TABLE
+    local returnedTabs = {}
+
     for _, name in ipairs(DEFAULT_TABS) do
-        self:CreateTab(name)
+        local tab = self:CreateTab(name)
+
+        self.TabByName[name] = tab
+        table.insert(self.Tabs, tab)
+
+        returnedTabs[name] = tab
     end
 
-    return self
+    return self, returnedTabs
 end
 
--- TAB CREATION
+-- CREATE TAB
 function Window:CreateTab(name)
 
     local tabButton = Instance.new("TextButton")
@@ -161,27 +171,39 @@ function Window:CreateTab(name)
         selfTab:Show()
     end)
 
-    table.insert(self.Tabs, selfTab)
-
-    -- auto first tab visible
-    if #self.Tabs == 1 then
-        page.Visible = true
-    end
-
     return selfTab
 end
 
--- BUTTON
+------------------------------------------------
+-- GAME CHECKER (solo tab Game la user lo usa)
+------------------------------------------------
+function Tab:CreateGameChecker(placeId, callback)
+
+    local b = Instance.new("TextButton")
+    b.Size = UDim2.new(1,-10,0,35)
+    b.Text = "GameChecker: " .. tostring(placeId)
+    b.Parent = self.Page
+
+    b.MouseButton1Click:Connect(function()
+        if game.PlaceId == placeId then
+            callback(true)
+        else
+            callback(false)
+        end
+    end)
+end
+
+------------------------------------------------
+-- UI COMPONENTS
+------------------------------------------------
 function Tab:CB(text, callback)
     local b = Instance.new("TextButton")
     b.Size = UDim2.new(1,-10,0,35)
     b.Text = text
     b.Parent = self.Page
-
     b.MouseButton1Click:Connect(callback)
 end
 
--- TOGGLE
 function Tab:CT(text, default, callback)
     local state = default or false
 
@@ -197,7 +219,6 @@ function Tab:CT(text, default, callback)
     end)
 end
 
--- SLIDER (click cycle)
 function Tab:CS(text, min, max, default, callback)
     local value = default or min
 
@@ -224,7 +245,6 @@ function Tab:CS(text, min, max, default, callback)
     end)
 end
 
--- DROPDOWN
 function Tab:CDD(text, list, callback)
     local i = 1
 
@@ -241,7 +261,6 @@ function Tab:CDD(text, list, callback)
     end)
 end
 
--- GAME TELEPORT
 function Tab:CreateGameTeleport(name, placeId)
     local b = Instance.new("TextButton")
     b.Size = UDim2.new(1,-10,0,35)
